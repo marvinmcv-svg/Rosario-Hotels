@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Hoteles Rosario website",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node scripts/generate.mjs && vite",
+    "build": "node scripts/generate.mjs && vite build",
     "preview": "vite preview"
   },
   "repository": {
@@ -17,8 +17,10 @@
   },
   "homepage": "https://github.com/marvinmcv-svg/Rosario-Hotels#readme",
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
     "@fontsource-variable/bodoni-moda": "^5.3.0",
     "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@vercel/oidc": "^4.0.8",
     "gsap": "^3.15.1",
     "lenis": "^1.3.27",
     "three": "^0.187.0"

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://rosario-hotels.vercel.app/sitemap.xml
