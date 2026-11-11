@@ -97,7 +97,7 @@ export function initChat() {
     out.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
     let reply = '';
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch('/api/chat/', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ lang, messages: history.slice(-MAX_TURNS) }),
