@@ -157,3 +157,5 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--l
 .adm-row-actions .abtn--danger { margin-left: 0; }
 .dr-list select { padding: .35rem .5rem; }
 @media (max-width: 860px) { .adm-settings { grid-template-columns: 1fr; } .adm-legend { margin-left: 0; } }
+
+.adm-filters input[type='date'] { width: auto; }

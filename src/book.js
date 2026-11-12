@@ -74,7 +74,7 @@ export function initBooking() {
       ${h.rooms.map((r, i) => {
         const q = roomQuote(i);
         const off = q && !q.available;
-        const note = !q ? '' : !q.fits ? (es ? `Máx. ${q.maxGuests} huéspedes` : `Max ${q.maxGuests} guests`) : !q.left ? (es ? 'Agotada para estas fechas' : 'Sold out for these dates') : q.left !== null && q.left <= 3 ? (es ? `¡Quedan ${q.left}!` : `Only ${q.left} left`) : '';
+        const note = !q ? '' : !q.fits ? (es ? `Máx. ${q.maxGuests} huéspedes` : `Max ${q.maxGuests} guests`) : !q.available ? (es ? 'Agotada para estas fechas' : 'Sold out for these dates') : q.left !== null && q.left <= 3 ? (es ? `¡Quedan ${q.left}!` : `Only ${q.left} left`) : '';
         return `
       <label class="bk__room${off ? ' is-off' : ''}"><input type="radio" name="room" value="${i}"${i === selected && !off ? ' checked' : ''}${off ? ' disabled' : ''} />
         <img src="/media/img/${r.img}-sm.webp" alt="" loading="lazy" />
