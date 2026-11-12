@@ -13,6 +13,8 @@ export function img(name, alt, { sizes = '100vw', cls = '', eager = false, small
   return `<img src="${src}"${srcset} alt="${esc(alt)}"${cls ? ` class="${cls}"` : ''} ${eager ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async" ${attrs}/>`;
 }
 
+export const WA_ICON = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.6-4.2A8.5 8.5 0 1 1 20.5 11.6Z"/><path d="M9 8.6c.2 1.8 2.4 4.4 4.6 5.4l1.2-1.1 1.8.9-.4 1.6c-3 .4-7.4-3.6-7.6-6.6l1.5-.6.9 1.7Z"/></svg>';
+
 export const ARROW = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg>';
 
 function head({ lang, title, description, key, ogImage = 'tt-hero' }) {
@@ -64,7 +66,7 @@ function nav(lang, key) {
     </nav>
     <div class="nav__end">
       <a class="nav__lang" href="${r(key, other)}" hreflang="${other}" lang="${other}" aria-label="${t.otherLangName}">${t.otherLang}</a>
-      <a class="btn btn--small" href="#book" data-book>${t.nav.book}</a>
+      <a class="btn btn--small" href="${r('book', lang)}">${t.nav.book}</a>
       <button class="nav__menu" type="button" aria-expanded="false" aria-controls="menu" data-menu-toggle>
         <span></span><span></span><span class="sr-only">${t.nav.menu}</span>
       </button>
@@ -104,7 +106,10 @@ export function bookForm(lang, { hotelId = '', cls = '' } = {}) {
 function bookBand(lang, hotelId) {
   return `
   <section class="book-band" id="book" data-theme="night" aria-label="${T[lang].book.title}">
-    <h2 class="display" data-split>${T[lang].book.title}</h2>
+    <div class="book-band__head">
+      <h2 class="display" data-split>${T[lang].book.title}</h2>
+      <a class="btn btn--wa" href="${r('book', lang)}${hotelId && hotelId !== 'centro' ? `?hotel=${hotelId}` : ''}">${WA_ICON}${lang === 'es' ? 'Reservar por WhatsApp' : 'Book on WhatsApp'}</a>
+    </div>
     ${bookForm(lang, { hotelId, cls: 'book--band' })}
   </section>`;
 }
@@ -122,7 +127,7 @@ function footer(lang) {
     <div class="footer__cta">
       <p class="display">${t.footer.cta}</p>
       <div class="footer__actions">
-        <a class="btn btn--solid" href="#book" data-book>${t.footer.bookDirect}</a>
+        <a class="btn btn--solid" href="${r('book', lang)}">${t.footer.bookDirect}</a>
         <a class="btn" href="${CONTACT.whatsapp}" target="_blank" rel="noopener">WhatsApp</a>
       </div>
     </div>
@@ -182,6 +187,21 @@ function chat(lang) {
   </div>`;
 }
 
+function waFab(lang) {
+  const es = lang === 'es';
+  const hello = encodeURIComponent(es ? '¡Hola Hoteles Rosario! Tengo una consulta.' : 'Hello Hoteles Rosario! I have a question.');
+  return `
+  <div class="wafab" data-wafab>
+    <div class="wafab__pop" id="wafab-pop" hidden data-wafab-pop>
+      <p class="wafab__title">${es ? 'Escríbenos por WhatsApp' : 'Message us on WhatsApp'}</p>
+      <a href="${r('book', lang)}" class="wafab__opt"><strong>${es ? 'Reservar una estadía' : 'Book a stay'}</strong><small>${es ? 'Arma tu solicitud en 4 pasos' : 'Build your request in 4 steps'}</small></a>
+      <a href="https://wa.me/${CONTACT.tel.replace('+', '')}?text=${hello}" target="_blank" rel="noopener" class="wafab__opt"><strong>${es ? 'Hacer una pregunta' : 'Ask a question'}</strong><small>${CONTACT.phone}</small></a>
+      <a href="https://wa.me/59177006375?text=${hello}" target="_blank" rel="noopener" class="wafab__opt"><strong>${es ? 'Hotel en Uyuni' : 'Uyuni hotel'}</strong><small>+591 7700 6375</small></a>
+    </div>
+    <button type="button" class="wafab__btn" aria-expanded="false" aria-controls="wafab-pop" aria-label="WhatsApp" data-wafab-btn>${WA_ICON}</button>
+  </div>`;
+}
+
 export function page({ lang, key, title, description, body, hotelId = '', ogImage, book = true }) {
   return `${head({ lang, title, description, key, ogImage })}
 <body class="page page--${key}">
@@ -192,6 +212,7 @@ ${book ? bookBand(lang, hotelId) : ''}
   </main>
 ${footer(lang)}
 ${chat(lang)}
+${waFab(lang)}
   <div class="cursor" aria-hidden="true" data-cursor><span data-cursor-label></span></div>
   <script type="module" src="/src/main.js"></script>
 </body>

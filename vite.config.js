@@ -8,6 +8,7 @@ const input = Object.fromEntries(
     LANGS.map((lang) => [`${key}-${lang}`, join(import.meta.dirname, byLang[lang].replace(/^\//, ''), 'index.html')])
   )
 );
+input.admin = join(import.meta.dirname, 'admin', 'index.html');
 
 export default defineConfig({
   build: { chunkSizeWarningLimit: 700, rollupOptions: { input } },

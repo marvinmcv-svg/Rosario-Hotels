@@ -4,6 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import Lenis from 'lenis';
 import { initChat } from './chat.js';
+import { initBooking } from './book.js';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -519,6 +520,21 @@ async function homeIntro() {
     .add(() => loader.remove());
 }
 
+/* ---------- Floating WhatsApp ---------- */
+function waFab() {
+  const box = $('[data-wafab]');
+  if (!box) return;
+  const btn = $('[data-wafab-btn]', box), pop = $('[data-wafab-pop]', box);
+  const set = (open) => {
+    btn.setAttribute('aria-expanded', String(open));
+    pop.hidden = !open;
+    if (open && !reduced) gsap.fromTo(pop, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: 'expo.out' });
+  };
+  btn.addEventListener('click', () => set(pop.hidden));
+  document.addEventListener('click', (e) => { if (!box.contains(e.target)) set(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') set(false); });
+}
+
 /* ---------- Boot ---------- */
 async function boot() {
   await document.fonts.ready;
@@ -542,6 +558,8 @@ async function boot() {
   cursor();
   themes();
   initChat();
+  initBooking();
+  waFab();
   // keep the chat button clear of the home booking bar while the hero fills the screen
   const chatBox = $('[data-chat]');
   const heroEl = $('.hero');

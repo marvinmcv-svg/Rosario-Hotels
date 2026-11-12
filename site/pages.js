@@ -1,5 +1,5 @@
 import { HOTELS, THEMED, OFFERS, FAQ, CONTACT, T, hotel, bookingUrl } from './content.js';
-import { page, img, esc, r, bookForm, ARROW } from './layout.js';
+import { page, img, esc, r, bookForm, ARROW, WA_ICON } from './layout.js';
 
 const t = (lang) => T[lang];
 
@@ -48,7 +48,10 @@ function roomRows(lang, h) {
               ${rm.view ? `<div><dt>${tt.view}</dt><dd>${esc(rm.view[lang])}</dd></div>` : ''}
               ${rm.where ? `<div><dt>${tt.location}</dt><dd>${esc(rm.where[lang])}</dd></div>` : ''}
             </dl>
-            <a class="link-arrow" href="${bookingUrl(h.bookingId)}" target="_blank" rel="noopener">${tt.reserve}</a>
+            <div class="rrow__ctas">
+              <a class="btn btn--small btn--wa" href="${r('book', lang)}?hotel=${h.id}&amp;room=${i}">${WA_ICON}${lang === 'es' ? 'Reservar por WhatsApp' : 'Book on WhatsApp'}</a>
+              <a class="link-arrow" href="${bookingUrl(h.bookingId)}" target="_blank" rel="noopener">${lang === 'es' ? 'Motor de reservas' : 'Booking engine'}</a>
+            </div>
           </div>
         </article>`).join('');
 }
@@ -275,7 +278,7 @@ export function hotelPage(lang, id) {
           <div><dt>★</dt><dd>${h.stars} ${lang === 'es' ? 'estrellas' : 'stars'}</dd></div>
         </dl>`;
   const cta = open
-    ? `<div class="phero__ctas"><a class="btn btn--solid" href="${bookingUrl(h.bookingId)}" target="_blank" rel="noopener">${tt.reserveAt} ${esc(h.name)}</a><a class="btn" href="#rooms-list">${tt.roomsTitle}</a></div>`
+    ? `<div class="phero__ctas"><a class="btn btn--solid" href="${r('book', lang)}?hotel=${h.id}">${tt.reserveAt} ${esc(h.name)}</a><a class="btn btn--wa" href="${r('book', lang)}?hotel=${h.id}">${WA_ICON}WhatsApp</a><a class="btn" href="#rooms-list">${tt.roomsTitle}</a></div>`
     : `<div class="phero__ctas"><a class="btn btn--solid" href="${r('sur', lang)}">${lang === 'es' ? 'Hospédate en Rosario Sur' : 'Stay at Rosario Sur'}</a></div>`;
 
   const body = `

@@ -14,7 +14,11 @@ export const ROUTES = {
   offers: { en: '/offers/', es: '/es/ofertas/' },
   gallery: { en: '/gallery/', es: '/es/galeria/' },
   contact: { en: '/contact/', es: '/es/contacto/' },
+  book: { en: '/book/', es: '/es/reservar/' },
 };
+
+// WhatsApp numbers that receive booking requests, per hotel (digits only, for wa.me).
+export const WHATSAPP_BOOKING = { titicaca: '59176254988', uyuni: '59177006375', sur: '59176254988', centro: '59176254988', default: '59176254988' };
 
 export const CONTACT = {
   phone: '+591 7625 4988',
