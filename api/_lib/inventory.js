@@ -42,6 +42,7 @@ export async function getSettings() {
 }
 
 export async function saveSettings(input, current) {
+  if (input.reset) return writeJson(CONFIG, { ...defaultSettings(), notify: current.notify, updatedAt: new Date().toISOString() });
   const next = { ...current, sample: false, updatedAt: new Date().toISOString() };
   if (input.rooms) {
     for (const id of Object.keys(next.rooms)) {

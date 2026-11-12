@@ -16,6 +16,7 @@ $$('[data-mark]').forEach((svg) => { svg.innerHTML = MARK.map(([c, d]) => `<path
 const I18N = {
   es: {
 
+    resetRates: 'Restaurar valores de ejemplo', confirmReset: '¿Reemplazar todas las tarifas e inventario por los valores de ejemplo?',
     username: 'Usuario', calendar: 'Calendario', settings: 'Ajustes', free: 'Libre', partly: 'Parcial', full: 'Lleno', unassigned: 'Sin habitación asignada',
     ratesTitle: 'Tarifas e inventario', ratesSub: 'Habitaciones disponibles, tarifa por noche (USD) y máximo de huéspedes por tipo.', saveRates: 'Guardar tarifas',
     units: 'Unidades', rate: 'Tarifa/noche', maxGuests: 'Máx. huéspedes', notifyTitle: 'Notificaciones por correo', staffEmails: 'Correos del personal (separados por coma)',
@@ -45,6 +46,7 @@ const I18N = {
   },
   en: {
 
+    resetRates: 'Restore sample values', confirmReset: 'Replace all rates and inventory with the sample values?',
     username: 'Username', calendar: 'Calendar', settings: 'Settings', free: 'Free', partly: 'Partly booked', full: 'Full', unassigned: 'No room assigned',
     ratesTitle: 'Rates & inventory', ratesSub: 'Rooms available, nightly rate (USD) and maximum guests per room type.', saveRates: 'Save rates',
     units: 'Units', rate: 'Rate/night', maxGuests: 'Max guests', notifyTitle: 'Email notifications', staffEmails: 'Staff emails (comma separated)',
@@ -305,6 +307,10 @@ $('[data-save-rates]').addEventListener('click', async () => {
   const rooms = structuredClone(settings.rooms);
   $$('[data-rate]').forEach((inp) => { const [id, i, k] = inp.dataset.rate.split('.'); rooms[id][i][k] = Number(inp.value); });
   try { ({ settings } = await api('settings', { method: 'PUT', body: JSON.stringify({ rooms }) })); toast(tr('saved')); render(); renderSettings(); } catch { toast(tr('errSave')); }
+});
+$('[data-reset-rates]').addEventListener('click', async () => {
+  if (!confirm(tr('confirmReset'))) return;
+  try { ({ settings } = await api('settings', { method: 'PUT', body: JSON.stringify({ reset: true }) })); toast(tr('saved')); render(); renderSettings(); } catch { toast(tr('errSave')); }
 });
 $('[data-save-notify]').addEventListener('click', async () => {
   const notify = { staffEmails: $('[data-staff-emails]').value, guestEmails: $('[data-guest-emails]').checked };

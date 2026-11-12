@@ -87,7 +87,7 @@ export function adminPage() {
           <article class="adm-card" data-owner-only>
             <header><h2 data-i="ratesTitle">Tarifas e inventario</h2><p data-i="ratesSub">Habitaciones disponibles, tarifa por noche (USD) y máximo de huéspedes por tipo.</p></header>
             <div data-rates></div>
-            <footer><button class="abtn abtn--solid" type="button" data-save-rates data-i="saveRates">Guardar tarifas</button></footer>
+            <footer><button class="abtn" type="button" data-reset-rates data-i="resetRates">Restaurar valores de ejemplo</button><button class="abtn abtn--solid" type="button" data-save-rates data-i="saveRates">Guardar tarifas</button></footer>
           </article>
           <article class="adm-card" data-owner-only>
             <header><h2 data-i="notifyTitle">Notificaciones por correo</h2><p data-email-status></p></header>
