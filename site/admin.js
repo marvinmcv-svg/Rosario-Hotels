@@ -19,7 +19,8 @@ export function adminPage() {
       <svg class="mark" viewBox="-1 -1 43 37" data-mark aria-hidden="true"></svg>
       <h1>Hoteles Rosario</h1>
       <p data-i="loginSub">Portal de administración</p>
-      <label><span data-i="password">Contraseña</span><input type="password" name="password" autocomplete="current-password" required autofocus /></label>
+      <label><span data-i="username">Usuario</span><input name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus /></label>
+      <label><span data-i="password">Contraseña</span><input type="password" name="password" autocomplete="current-password" required /></label>
       <button class="abtn abtn--solid" type="submit" data-i="signIn">Entrar</button>
       <p class="adm-err" role="alert" data-login-err></p>
     </form>
@@ -31,16 +32,20 @@ export function adminPage() {
       <nav class="adm-tabs" role="tablist">
         <button role="tab" aria-selected="true" data-view="bookings" data-i="bookings">Reservas</button>
         <button role="tab" aria-selected="false" data-view="arrivals" data-i="arrivals">Llegadas</button>
+        <button role="tab" aria-selected="false" data-view="calendar" data-i="calendar">Calendario</button>
+        <button role="tab" aria-selected="false" data-view="settings" data-i="settings">Ajustes</button>
       </nav>
       <div class="adm-top__end">
         <button class="abtn abtn--ghost" type="button" data-lang-toggle>EN</button>
         <button class="abtn abtn--ghost" type="button" data-refresh data-i="refresh">Actualizar</button>
         <button class="abtn abtn--solid" type="button" data-new data-i="newBooking">Nueva reserva</button>
+        <span class="adm-user" data-whoami></span>
         <button class="abtn abtn--ghost" type="button" data-logout data-i="logout">Salir</button>
       </div>
     </header>
 
     <main class="adm-main">
+      <p class="adm-banner" data-banner hidden></p>
       <section class="adm-stats" data-stats aria-live="polite"></section>
 
       <section data-panel="bookings">
@@ -65,6 +70,51 @@ export function adminPage() {
       <section data-panel="arrivals" hidden>
         <div class="adm-arrivals" data-arrivals></div>
       </section>
+
+      <section data-panel="calendar" hidden>
+        <div class="adm-filters">
+          <select data-cal-hotel>${hotels.filter((h) => h.rooms.length).map((h) => `<option value="${h.id}">${esc(h.name)}</option>`).join('')}</select>
+          <button class="abtn" type="button" data-cal-prev>←</button>
+          <input type="date" data-cal-from />
+          <button class="abtn" type="button" data-cal-next>→</button>
+          <span class="adm-legend"><i class="l0"></i><span data-i="free">Libre</span><i class="l1"></i><span data-i="partly">Parcial</span><i class="l2"></i><span data-i="full">Lleno</span></span>
+        </div>
+        <div class="adm-tablewrap" data-cal></div>
+      </section>
+
+      <section data-panel="settings" hidden>
+        <div class="adm-settings">
+          <article class="adm-card" data-owner-only>
+            <header><h2 data-i="ratesTitle">Tarifas e inventario</h2><p data-i="ratesSub">Habitaciones disponibles, tarifa por noche (USD) y máximo de huéspedes por tipo.</p></header>
+            <div data-rates></div>
+            <footer><button class="abtn abtn--solid" type="button" data-save-rates data-i="saveRates">Guardar tarifas</button></footer>
+          </article>
+          <article class="adm-card" data-owner-only>
+            <header><h2 data-i="notifyTitle">Notificaciones por correo</h2><p data-email-status></p></header>
+            <label class="adm-field"><span data-i="staffEmails">Correos del personal (separados por coma)</span><input data-staff-emails placeholder="reservas@…, gerente@…" /></label>
+            <label class="adm-check"><input type="checkbox" data-guest-emails /> <span data-i="guestEmails">Enviar confirmación al huésped cuando la reserva se confirma</span></label>
+            <footer><button class="abtn" type="button" data-test-email data-i="testEmail">Enviar prueba</button><button class="abtn abtn--solid" type="button" data-save-notify data-i="save">Guardar</button></footer>
+          </article>
+          <article class="adm-card" data-owner-only>
+            <header><h2 data-i="usersTitle">Usuarios</h2><p data-i="usersSub">Cuentas del personal. Los propietarios gestionan tarifas y usuarios; el personal gestiona reservas.</p></header>
+            <div data-users></div>
+            <form class="adm-inline" data-add-user>
+              <input name="username" placeholder="usuario" autocapitalize="none" required pattern="[a-z0-9._-]{3,32}" />
+              <input name="name" placeholder="Nombre" data-i-ph="fullName" />
+              <select name="role"><option value="staff">staff</option><option value="owner">owner</option></select>
+              <input name="password" type="password" placeholder="contraseña (8+)" minlength="8" required data-i-ph="newPw" />
+              <button class="abtn abtn--solid" data-i="addUser">Agregar</button>
+            </form>
+          </article>
+          <article class="adm-card">
+            <header><h2 data-i="myPassword">Mi contraseña</h2></header>
+            <form class="adm-inline" data-my-pw>
+              <input name="password" type="password" minlength="8" required placeholder="nueva contraseña (8+)" data-i-ph="newPw" autocomplete="new-password" />
+              <button class="abtn abtn--solid" data-i="changePw">Cambiar</button>
+            </form>
+          </article>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -86,6 +136,8 @@ export function adminPage() {
         <label><span data-i="country">País</span><input name="country" /></label>
         <label><span data-i="channel">Canal</span><select name="channel"><option value="phone">Phone</option><option value="whatsapp">WhatsApp</option><option value="walk_in">Walk-in</option><option value="email">Email</option><option value="web">Web</option></select></label>
         <label><span data-i="status">Estado</span><select name="status"><option value="pending">pending</option><option value="confirmed">confirmed</option></select></label>
+        <label><span data-i="price">Precio acordado</span><input name="price" /></label>
+        <label class="adm-check"><input type="checkbox" name="notify" value="1" /> <span data-i="notifyStaff">Avisar al personal por correo</span></label>
         <label class="adm-grid__full"><span data-i="notes">Notas</span><textarea name="notes" rows="3"></textarea></label>
       </div>
       <p class="adm-err" role="alert" data-new-err></p>

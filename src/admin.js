@@ -15,7 +15,20 @@ $$('[data-mark]').forEach((svg) => { svg.innerHTML = MARK.map(([c, d]) => `<path
 /* ---------- i18n ---------- */
 const I18N = {
   es: {
-    loginSub: 'Portal de administración', password: 'Contraseña', signIn: 'Entrar', badPw: 'Contraseña incorrecta.', notConfigured: 'Falta configurar ADMIN_PASSWORD en Vercel.',
+
+    username: 'Usuario', calendar: 'Calendario', settings: 'Ajustes', free: 'Libre', partly: 'Parcial', full: 'Lleno', unassigned: 'Sin habitación asignada',
+    ratesTitle: 'Tarifas e inventario', ratesSub: 'Habitaciones disponibles, tarifa por noche (USD) y máximo de huéspedes por tipo.', saveRates: 'Guardar tarifas',
+    units: 'Unidades', rate: 'Tarifa/noche', maxGuests: 'Máx. huéspedes', notifyTitle: 'Notificaciones por correo', staffEmails: 'Correos del personal (separados por coma)',
+    guestEmails: 'Enviar confirmación al huésped cuando la reserva se confirma', testEmail: 'Enviar prueba', usersTitle: 'Usuarios',
+    usersSub: 'Cuentas del personal. Los propietarios gestionan tarifas y usuarios; el personal gestiona reservas.', addUser: 'Agregar', myPassword: 'Mi contraseña', changePw: 'Cambiar',
+    fullName: 'Nombre', newPw: 'nueva contraseña (8+)', remove: 'Quitar', resetPw: 'Nueva contraseña', notifyStaff: 'Avisar al personal por correo',
+    emailOn: 'Correo activo (Resend). Remitente: {from}', emailOff: 'El envío de correos no está activo: agrega RESEND_API_KEY en Vercel → Settings → Environment Variables y vuelve a desplegar.',
+    sampleBanner: 'Estás usando tarifas e inventario de ejemplo. Ingresa los reales en Ajustes → Tarifas e inventario.',
+    emailBanner: 'Las notificaciones por correo aún no están activas (falta RESEND_API_KEY).',
+    soldOutForce: 'Esa habitación no tiene disponibilidad para esas fechas. ¿Guardar de todas formas (sobreventa)?',
+    estimate: 'Estimado', sent: 'Enviado', userAdded: 'Usuario agregado', pwChanged: 'Contraseña actualizada', confirmRemoveUser: '¿Quitar al usuario {u}?',
+    occupancy: 'Ocupación', errUser: 'Revisa usuario (3–32: a-z 0-9 . _ -) y contraseña (8+).',
+    loginSub: 'Portal de administración', password: 'Contraseña', signIn: 'Entrar', badPw: 'Usuario o contraseña incorrectos.', notConfigured: 'Falta configurar ADMIN_PASSWORD en Vercel.',
     bookings: 'Reservas', arrivals: 'Llegadas', refresh: 'Actualizar', newBooking: 'Nueva reserva', logout: 'Salir',
     search: 'Buscar: nombre, código, teléfono…', allHotels: 'Todos los hoteles', allChannels: 'Todos los canales', export: 'Exportar CSV',
     ref: 'Código', guest: 'Huésped', hotel: 'Hotel', dates: 'Fechas', guests: 'Pax', channel: 'Canal', status: 'Estado', received: 'Recibida',
@@ -31,7 +44,20 @@ const I18N = {
     errLoad: 'No se pudieron cargar las reservas.', errSave: 'No se pudo guardar.', error: 'Revisa los datos', session: 'Tu sesión expiró. Vuelve a entrar.',
   },
   en: {
-    loginSub: 'Admin portal', password: 'Password', signIn: 'Sign in', badPw: 'Wrong password.', notConfigured: 'ADMIN_PASSWORD is not set in Vercel.',
+
+    username: 'Username', calendar: 'Calendar', settings: 'Settings', free: 'Free', partly: 'Partly booked', full: 'Full', unassigned: 'No room assigned',
+    ratesTitle: 'Rates & inventory', ratesSub: 'Rooms available, nightly rate (USD) and maximum guests per room type.', saveRates: 'Save rates',
+    units: 'Units', rate: 'Rate/night', maxGuests: 'Max guests', notifyTitle: 'Email notifications', staffEmails: 'Staff emails (comma separated)',
+    guestEmails: 'Email the guest when their booking is confirmed', testEmail: 'Send test', usersTitle: 'Users',
+    usersSub: 'Staff accounts. Owners manage rates and users; staff manage bookings.', addUser: 'Add', myPassword: 'My password', changePw: 'Change',
+    fullName: 'Name', newPw: 'new password (8+)', remove: 'Remove', resetPw: 'New password', notifyStaff: 'Notify staff by email',
+    emailOn: 'Email is on (Resend). Sender: {from}', emailOff: 'Email sending is off: add RESEND_API_KEY in Vercel → Settings → Environment Variables, then redeploy.',
+    sampleBanner: 'You are using sample rates and room counts. Enter the real ones in Settings → Rates & inventory.',
+    emailBanner: 'Email notifications are not active yet (RESEND_API_KEY missing).',
+    soldOutForce: 'That room has no availability for those dates. Save anyway (overbook)?',
+    estimate: 'Estimate', sent: 'Sent', userAdded: 'User added', pwChanged: 'Password updated', confirmRemoveUser: 'Remove user {u}?',
+    occupancy: 'Occupancy', errUser: 'Check the username (3–32: a-z 0-9 . _ -) and password (8+).',
+    loginSub: 'Admin portal', password: 'Password', signIn: 'Sign in', badPw: 'Wrong username or password.', notConfigured: 'ADMIN_PASSWORD is not set in Vercel.',
     bookings: 'Bookings', arrivals: 'Arrivals', refresh: 'Refresh', newBooking: 'New booking', logout: 'Sign out',
     search: 'Search: name, reference, phone…', allHotels: 'All hotels', allChannels: 'All channels', export: 'Export CSV',
     ref: 'Ref', guest: 'Guest', hotel: 'Hotel', dates: 'Dates', guests: 'Pax', channel: 'Channel', status: 'Status', received: 'Received',
@@ -76,6 +102,10 @@ async function api(path, opts = {}) {
 
 /* ---------- state ---------- */
 let bookings = [];
+let settings = null;
+let emailInfo = { configured: false, from: '' };
+let me = null;
+const isOwner = () => me?.role === 'owner';
 const filters = { q: '', status: '', hotel: '', channel: '' };
 let view = 'bookings';
 
@@ -96,19 +126,22 @@ function showLogin(msg = '') {
   $('[data-app]').hidden = true;
   $('[data-login]').hidden = false;
   $('[data-login-err]').textContent = msg;
-  $('[name="password"]').focus();
+  $('[name="username"]').focus();
 }
 function showApp() {
   $('[data-login]').hidden = true;
   $('[data-app]').hidden = false;
+  $('[data-whoami]').textContent = me ? `${me.name || me.username} · ${me.role}` : '';
+  $$('[data-owner-only]').forEach((el) => { el.hidden = !isOwner(); });
   load();
 }
 $('[data-login-form]').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = $('button', e.target); btn.disabled = true;
   try {
-    await api('session', { method: 'POST', body: JSON.stringify({ password: e.target.password.value }) });
+    const s = await api('session', { method: 'POST', body: JSON.stringify({ username: e.target.username.value, password: e.target.password.value }) });
     e.target.reset();
+    me = s.user;
     showApp();
   } catch (err) {
     $('[data-login-err]').textContent = err.message === 'not_configured' || err.data?.error === 'not_configured' ? tr('notConfigured') : tr('badPw');
@@ -120,9 +153,11 @@ $('[data-logout]').addEventListener('click', async () => { await api('session', 
 /* ---------- load + render ---------- */
 async function load() {
   try {
-    const data = await api('bookings');
+    const [data, st] = await Promise.all([api('bookings'), api('settings')]);
     bookings = data.bookings || [];
+    settings = st.settings; emailInfo = st.email;
     render();
+    renderSettings();
   } catch (e) { if (e.message !== 'unauthorized') toast(tr('errLoad')); }
 }
 
@@ -199,7 +234,94 @@ function renderArrivals() {
   $$('[data-arrivals] [data-ref]').forEach((b) => b.addEventListener('click', () => openDrawer(b.dataset.ref)));
 }
 
-function render() { renderStats(); renderSeg(); renderTable(); renderArrivals(); }
+function render() { renderBanner(); renderStats(); renderSeg(); renderTable(); renderArrivals(); renderCalendar(); }
+
+function renderBanner() {
+  const msgs = [];
+  if (settings?.sample) msgs.push(tr('sampleBanner'));
+  if (!emailInfo.configured) msgs.push(tr('emailBanner'));
+  const el = $('[data-banner]');
+  el.hidden = !msgs.length;
+  el.textContent = msgs.join(' ');
+}
+
+/* ---------- calendar ---------- */
+const calHotel = $('[data-cal-hotel]'), calFrom = $('[data-cal-from]');
+calFrom.value = new Date().toLocaleDateString('en-CA');
+function renderCalendar() {
+  if (!settings) return;
+  const hotel = calHotel.value, days = 21;
+  const dates = Array.from({ length: days }, (_, i) => addDays(calFrom.value, i));
+  const rooms = settings.rooms[hotel] || [];
+  const holding = bookings.filter((b) => b.hotel === hotel && ['pending', 'confirmed', 'checked_in'].includes(b.status));
+  const cell = (r, i, d) => {
+    const bs = holding.filter((b) => b.room === i && b.checkIn <= d && b.checkOut > d);
+    const lvl = !bs.length ? 0 : bs.length >= r.units ? 2 : 1;
+    return `<td class="cal c${lvl}" title="${esc(bs.map((b) => `${b.ref} ${b.guest?.name}`).join('\n'))}"${bs[0] ? ` data-ref="${esc(bs[0].ref)}"` : ''}>${bs.length}/${r.units}</td>`;
+  };
+  const unassigned = dates.map((d) => holding.filter((b) => (b.room === null || b.room === undefined) && b.checkIn <= d && b.checkOut > d).length);
+  $('[data-cal]').innerHTML = `<table class="adm-table adm-cal"><thead><tr><th>${tr('room')}</th>${dates.map((d) => `<th class="num${d === todayIso() ? ' is-today' : ''}">${fmt(d, { weekday: 'narrow' })}<br>${d.slice(8)}</th>`).join('')}</tr></thead>
+    <tbody>${rooms.map((r, i) => `<tr><td>${esc(r.name)}</td>${dates.map((d) => cell(r, i, d)).join('')}</tr>`).join('')}
+    ${unassigned.some(Boolean) ? `<tr><td><em>${tr('unassigned')}</em></td>${unassigned.map((n) => `<td class="cal ${n ? 'c1' : 'c0'}">${n || ''}</td>`).join('')}</tr>` : ''}</tbody></table>`;
+  $$('[data-cal] [data-ref]').forEach((td) => td.addEventListener('click', () => openDrawer(td.dataset.ref)));
+}
+calHotel.addEventListener('change', renderCalendar);
+calFrom.addEventListener('change', renderCalendar);
+$('[data-cal-prev]').addEventListener('click', () => { calFrom.value = addDays(calFrom.value, -7); renderCalendar(); });
+$('[data-cal-next]').addEventListener('click', () => { calFrom.value = addDays(calFrom.value, 7); renderCalendar(); });
+
+/* ---------- settings ---------- */
+async function renderSettings() {
+  if (!settings) return;
+  $('[data-email-status]').textContent = emailInfo.configured ? tr('emailOn').replace('{from}', emailInfo.from) : tr('emailOff');
+  $('[data-email-status]').className = emailInfo.configured ? 'ok' : 'warn';
+  if (!isOwner()) return;
+  $('[data-rates]').innerHTML = Object.entries(settings.rooms).map(([id, rooms]) => `
+    <h3 class="adm-h3">${esc(HOTEL[id]?.name || id)}</h3>
+    <table class="adm-table adm-rates"><thead><tr><th>${tr('room')}</th><th>${tr('units')}</th><th>${tr('rate')}</th><th>${tr('maxGuests')}</th></tr></thead><tbody>
+    ${rooms.map((r, i) => `<tr><td>${esc(r.name)}</td>
+      <td><input type="number" min="0" max="200" value="${r.units}" data-rate="${id}.${i}.units" /></td>
+      <td><input type="number" min="0" step="1" value="${r.rate}" data-rate="${id}.${i}.rate" /></td>
+      <td><input type="number" min="1" max="12" value="${r.maxGuests}" data-rate="${id}.${i}.maxGuests" /></td></tr>`).join('')}
+    </tbody></table>`).join('');
+  $('[data-staff-emails]').value = (settings.notify.staffEmails || []).join(', ');
+  $('[data-guest-emails]').checked = settings.notify.guestEmails !== false;
+  try {
+    const { users } = await api('users');
+    $('[data-users]').innerHTML = `<table class="adm-table"><tbody>${users.map((u) => `<tr><td><strong>${esc(u.username)}</strong><small>${esc(u.name || '')}</small></td><td>${esc(u.role)}</td>
+      <td class="adm-row-actions"><button class="abtn" data-reset-user="${esc(u.username)}">${tr('resetPw')}</button>${u.username !== me.username && u.username !== 'admin' ? `<button class="abtn abtn--danger" data-remove-user="${esc(u.username)}">${tr('remove')}</button>` : ''}</td></tr>`).join('')}</tbody></table>`;
+    $$('[data-reset-user]').forEach((b) => b.addEventListener('click', async () => {
+      const pw = prompt(`${tr('resetPw')} — ${b.dataset.resetUser} (8+)`);
+      if (!pw) return;
+      try { await api('users', { method: 'PATCH', body: JSON.stringify({ username: b.dataset.resetUser, password: pw }) }); toast(tr('pwChanged')); } catch { toast(tr('errUser')); }
+    }));
+    $$('[data-remove-user]').forEach((b) => b.addEventListener('click', async () => {
+      if (!confirm(tr('confirmRemoveUser').replace('{u}', b.dataset.removeUser))) return;
+      try { await api('users', { method: 'DELETE', body: JSON.stringify({ username: b.dataset.removeUser }) }); renderSettings(); } catch { toast(tr('errSave')); }
+    }));
+  } catch { /* ignore */ }
+}
+$('[data-save-rates]').addEventListener('click', async () => {
+  const rooms = structuredClone(settings.rooms);
+  $$('[data-rate]').forEach((inp) => { const [id, i, k] = inp.dataset.rate.split('.'); rooms[id][i][k] = Number(inp.value); });
+  try { ({ settings } = await api('settings', { method: 'PUT', body: JSON.stringify({ rooms }) })); toast(tr('saved')); render(); renderSettings(); } catch { toast(tr('errSave')); }
+});
+$('[data-save-notify]').addEventListener('click', async () => {
+  const notify = { staffEmails: $('[data-staff-emails]').value, guestEmails: $('[data-guest-emails]').checked };
+  try { ({ settings } = await api('settings', { method: 'PUT', body: JSON.stringify({ notify }) })); toast(tr('saved')); renderSettings(); } catch { toast(tr('errSave')); }
+});
+$('[data-test-email]').addEventListener('click', async () => {
+  try { await api('settings', { method: 'POST', body: '{}' }); toast(tr('sent')); } catch (e) { toast(`${tr('errSave')} ${e.data?.error || ''}`); }
+});
+$('[data-add-user]').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(e.target));
+  try { await api('users', { method: 'POST', body: JSON.stringify(f) }); e.target.reset(); toast(tr('userAdded')); renderSettings(); } catch { toast(tr('errUser')); }
+});
+$('[data-my-pw]').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try { await api('users', { method: 'PATCH', body: JSON.stringify({ password: e.target.password.value }) }); e.target.reset(); toast(tr('pwChanged')); } catch { toast(tr('errUser')); }
+});
 
 /* ---------- drawer ---------- */
 function guestMessage(b) {
@@ -233,11 +355,12 @@ function openDrawer(ref) {
       ${wa ? `<a class="abtn abtn--wa" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(guestMessage(b))}">${tr('waGuest')}</a>` : ''}
       ${b.guest?.email ? `<a class="abtn" href="mailto:${esc(b.guest.email)}?subject=${encodeURIComponent(`Hoteles Rosario · ${b.ref}`)}&body=${encodeURIComponent(guestMessage(b).replace(/\*/g, ''))}">${tr('emailGuest')}</a>` : ''}
       <button type="button" class="abtn" data-copy>${tr('copy')}</button>
-      <button type="button" class="abtn abtn--danger" data-delete>${tr('delete')}</button>
+      ${isOwner() ? `<button type="button" class="abtn abtn--danger" data-delete>${tr('delete')}</button>` : ''}
     </div>
     <dl class="dr-list">
       <div><dt>${tr('hotel')}</dt><dd>${esc(HOTEL[b.hotel]?.full || b.hotelName)}</dd></div>
-      <div><dt>${tr('room')}</dt><dd>${esc(b.roomName || tr('anyRoom'))}</dd></div>
+      <div><dt>${tr('room')}</dt><dd><select data-room-select><option value="">${tr('unassigned')}</option>${(HOTEL[b.hotel]?.rooms || []).map((r, i) => `<option value="${i}"${b.room === i ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select></dd></div>
+      ${b.quote ? `<div><dt>${tr('estimate')}</dt><dd class="num">US$ ${b.quote.total} · US$ ${b.quote.rate} × ${b.nights}${b.quote.sample ? ' (sample rate)' : ''}</dd></div>` : ''}
       <div><dt>${tr('stay')}</dt><dd>${fmt(b.checkIn, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} → ${fmt(b.checkOut, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} · ${b.nights} ${tr('nights')}</dd></div>
       <div><dt>${tr('guests')}</dt><dd>${b.adults} ${tr('adults').toLowerCase()}${b.children ? ` · ${b.children} ${tr('children').toLowerCase()}` : ''}</dd></div>
       <div><dt>${tr('contact')}</dt><dd>${esc(b.guest?.phone || '—')}${b.guest?.email ? `<br>${esc(b.guest.email)}` : ''}${b.guest?.country ? `<br>${esc(b.guest.country)}` : ''}</dd></div>
@@ -255,7 +378,8 @@ function openDrawer(ref) {
   const body = $('[data-drawer-body]', dlg);
   $('[data-close]', body).addEventListener('click', () => dlg.close());
   $('[data-copy]', body).addEventListener('click', () => navigator.clipboard?.writeText(b.ref).then(() => toast(tr('copied'))));
-  $('[data-delete]', body).addEventListener('click', async () => {
+  $('[data-room-select]', body).addEventListener('change', (e) => update(b.ref, { room: e.target.value === '' ? null : Number(e.target.value) }));
+  $('[data-delete]', body)?.addEventListener('click', async () => {
     if (!confirm(tr('confirmDelete').replace('{ref}', b.ref))) return;
     try {
       await api('bookings', { method: 'DELETE', body: JSON.stringify({ ref: b.ref }) });
@@ -276,7 +400,14 @@ $('[data-drawer]').addEventListener('click', (e) => { if (e.target === e.current
 
 async function update(ref, patch) {
   try {
-    const { booking } = await api('bookings', { method: 'PATCH', body: JSON.stringify({ ref, ...patch }) });
+    let res;
+    try {
+      res = await api('bookings', { method: 'PATCH', body: JSON.stringify({ ref, ...patch }) });
+    } catch (e) {
+      if (e.status !== 409 || !confirm(tr('soldOutForce'))) { if (e.status === 409) openDrawer(ref); throw e; }
+      res = await api('bookings', { method: 'PATCH', body: JSON.stringify({ ref, ...patch, force: true }) });
+    }
+    const { booking } = res;
     bookings = bookings.map((x) => (x.ref === ref ? booking : x));
     render();
     openDrawer(ref);
@@ -302,9 +433,14 @@ newForm.addEventListener('submit', async (e) => {
   if (e.submitter?.value !== 'save') return;
   e.preventDefault();
   const f = Object.fromEntries(new FormData(newForm));
-  const body = { ...f, room: f.room === '' ? null : Number(f.room), adults: Number(f.adults), children: Number(f.children), lang };
+  const body = { ...f, room: f.room === '' ? null : Number(f.room), adults: Number(f.adults), children: Number(f.children), lang, notify: f.notify === '1' };
   try {
-    const { booking } = await api('bookings', { method: 'POST', body: JSON.stringify(body) });
+    let res;
+    try { res = await api('bookings', { method: 'POST', body: JSON.stringify(body) }); } catch (e2) {
+      if (e2.status !== 409 || !confirm(tr('soldOutForce'))) throw e2;
+      res = await api('bookings', { method: 'POST', body: JSON.stringify({ ...body, force: true }) });
+    }
+    const { booking } = res;
     bookings.unshift(booking);
     modal.close();
     render();
@@ -324,7 +460,7 @@ $$('[data-view]').forEach((b) => b.addEventListener('click', () => {
   $$('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== view; });
 }));
 $('[data-refresh]').addEventListener('click', load);
-$('[data-lang-toggle]').addEventListener('click', () => { lang = lang === 'es' ? 'en' : 'es'; localStorage.setItem('adm-lang', lang); applyI18n(); render(); });
+$('[data-lang-toggle]').addEventListener('click', () => { lang = lang === 'es' ? 'en' : 'es'; localStorage.setItem('adm-lang', lang); applyI18n(); render(); renderSettings(); });
 $('[data-export]').addEventListener('click', () => {
   const cols = ['ref', 'status', 'hotel', 'roomName', 'checkIn', 'checkOut', 'nights', 'adults', 'children', 'name', 'phone', 'email', 'country', 'channel', 'lang', 'extras', 'price', 'notes', 'createdAt'];
   const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
@@ -337,4 +473,4 @@ setInterval(() => { if (!$('[data-app]').hidden && !document.hidden && !$('[data
 
 /* ---------- boot ---------- */
 applyI18n();
-api('session').then((s) => (s.authenticated ? showApp() : showLogin(s.configured ? '' : tr('notConfigured')))).catch(() => showLogin());
+api('session').then((s) => { me = s.user; return s.authenticated ? showApp() : showLogin(s.configured ? '' : tr('notConfigured')); }).catch(() => showLogin());

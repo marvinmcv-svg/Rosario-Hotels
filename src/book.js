@@ -27,6 +27,28 @@ export function initBooking() {
   const chat = $('[data-phone-chat]', root);
   let step = 0;
   let sending = false;
+  let avail = null; // { key, rooms: [{room, available, fits, left, rate, total, nights}] }
+  const money = (n) => `US$ ${Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  const availKey = () => [form.hotel.value, form.checkIn.value, form.checkOut.value, Number(form.adults.value) + Number(form.children.value)].join('|');
+
+  async function loadAvailability() {
+    const key = availKey();
+    const [hotel, checkIn, checkOut, guests] = key.split('|');
+    if (!hotel || !checkIn || !checkOut || checkOut <= checkIn) { avail = null; return renderRooms(currentRoom()); }
+    const box = $('[data-bk-rooms]', form);
+    box.classList.add('is-loading');
+    try {
+      const res = await fetch(`/api/availability/?${new URLSearchParams({ hotel, checkIn, checkOut, guests })}`);
+      const data = await res.json();
+      if (key !== availKey()) return; // a newer request is in flight
+      avail = res.ok ? { key, rooms: data.rooms } : null;
+    } catch { avail = null; }
+    box.classList.remove('is-loading');
+    renderRooms(currentRoom());
+    preview();
+  }
+  const currentRoom = () => { const v = form.room?.value; return v === '' || v == null ? -1 : Number(v); };
+  const roomQuote = (i) => (avail && avail.key === availKey() ? avail.rooms[i] : null);
 
   $$('[data-now]', root).forEach((el) => { el.textContent = new Date().toLocaleTimeString(es ? 'es-BO' : 'en-GB', { hour: '2-digit', minute: '2-digit' }); });
 
@@ -48,18 +70,24 @@ export function initBooking() {
     const roomsBox = $('[data-bk-rooms]', form), exBox = $('[data-bk-extras]', form);
     if (!h) { roomsBox.innerHTML = ''; exBox.innerHTML = ''; return; }
     roomsBox.innerHTML = `
-      <label class="bk__room bk__room--any"><input type="radio" name="room" value="-1"${selected < 0 ? ' checked' : ''} /><span>${esc(t.anyRoom)}</span></label>
-      ${h.rooms.map((r, i) => `
-      <label class="bk__room"><input type="radio" name="room" value="${i}"${i === selected ? ' checked' : ''} />
+      <label class="bk__room bk__room--any"><input type="radio" name="room" value="-1"${selected < 0 || (roomQuote(selected) && !roomQuote(selected).available) ? ' checked' : ''} /><span>${esc(t.anyRoom)}</span></label>
+      ${h.rooms.map((r, i) => {
+        const q = roomQuote(i);
+        const off = q && !q.available;
+        const note = !q ? '' : !q.fits ? (es ? `Máx. ${q.maxGuests} huéspedes` : `Max ${q.maxGuests} guests`) : !q.left ? (es ? 'Agotada para estas fechas' : 'Sold out for these dates') : q.left !== null && q.left <= 3 ? (es ? `¡Quedan ${q.left}!` : `Only ${q.left} left`) : '';
+        return `
+      <label class="bk__room${off ? ' is-off' : ''}"><input type="radio" name="room" value="${i}"${i === selected && !off ? ' checked' : ''}${off ? ' disabled' : ''} />
         <img src="/media/img/${r.img}-sm.webp" alt="" loading="lazy" />
-        <span><strong>${esc(r.name)}</strong>${r.view ? `<small>${esc(r.view)}</small>` : ''}</span>
-      </label>`).join('')}`;
+        <span><strong>${esc(r.name)}</strong>${r.view ? `<small>${esc(r.view)}</small>` : ''}
+          ${q ? `<em class="bk__price">${q.available ? `${money(q.rate)} <small>/ ${es ? 'noche' : 'night'}</small>` : ''}${note ? `<small class="bk__left">${esc(note)}</small>` : ''}</em>` : ''}</span>
+      </label>`;
+      }).join('')}`;
     exBox.innerHTML = h.extras.map((x) => `<label class="chipbox"><input type="checkbox" name="extras" value="${x}" /><span>${esc(t.extra[x])}</span></label>`).join('');
   }
 
   function values() {
     const h = hotel();
-    const room = form.room ? Number(form.room.value) : -1;
+    const room = currentRoom();
     return {
       hotel: form.hotel.value,
       hotelName: h?.name || '',
@@ -72,6 +100,7 @@ export function initBooking() {
       name: form.name.value.trim(), phone: form.phone.value.trim(), email: form.email.value.trim(), country: form.country.value.trim(),
       website: form.website.value,
       lang: D.lang,
+      quote: room >= 0 ? roomQuote(room) : null,
     };
   }
   const nights = (v) => (v.checkIn && v.checkOut && v.checkOut > v.checkIn ? Math.round((new Date(v.checkOut) - new Date(v.checkIn)) / 864e5) : 0);
@@ -84,6 +113,7 @@ export function initBooking() {
     if (nights(v)) lines.push(`📅 *${m.dates}:* ${fmtDate(v.checkIn)} → ${fmtDate(v.checkOut)} (${nightsTxt(nights(v))})`);
     if (v.hotelName) lines.push(`🛏️ *${m.room}:* ${v.roomName || t.anyRoom}`);
     if (v.hotelName) lines.push(`👥 *${m.guests}:* ${guestsTxt(v.adults, v.children)}`);
+    if (v.quote?.available) lines.push(`💳 *${es ? 'Estimado' : 'Estimate'}:* ${money(v.quote.total)} (${money(v.quote.rate)} × ${nightsTxt(v.quote.nights)})`);
     if (v.extras.length) lines.push(`✨ *${m.extras}:* ${v.extras.map((x) => t.extra[x]).join(', ')}`);
     if (v.notes) lines.push(`📝 *${m.notes}:* ${v.notes}`);
     if (v.name) lines.push(`🙋 *${m.name}:* ${v.name}${v.country ? ` (${v.country})` : ''}`);
@@ -118,6 +148,7 @@ export function initBooking() {
     const rows = [
       [t.msg.hotel, v.hotelName], [t.msg.dates, `${fmtDate(v.checkIn)} → ${fmtDate(v.checkOut)} · ${nightsTxt(nights(v))}`],
       [t.msg.room, v.roomName || t.anyRoom], [t.msg.guests, guestsTxt(v.adults, v.children)],
+      ...(v.quote?.available ? [[es ? 'Estimado' : 'Estimate', `${money(v.quote.total)} · ${money(v.quote.rate)} × ${nightsTxt(v.quote.nights)} — ${es ? 'precio final confirmado por nuestro equipo' : 'final price confirmed by our team'}`]] : []),
       ...(v.extras.length ? [[t.msg.extras, v.extras.map((x) => t.extra[x]).join(', ')]] : []),
       [t.msg.name, `${v.name} · ${v.phone}${v.email ? ` · ${v.email}` : ''}`],
     ];
@@ -149,7 +180,8 @@ export function initBooking() {
     go(i);
   }));
   form.addEventListener('change', (e) => {
-    if (e.target.name === 'hotel') { renderRooms(); if (step === 0) setTimeout(() => go(1), 250); }
+    if (e.target.name === 'hotel') { avail = null; renderRooms(); if (step === 0) setTimeout(() => go(1), 250); }
+    if (['hotel', 'checkIn', 'checkOut', 'adults', 'children'].includes(e.target.name)) loadAvailability();
     preview();
   });
   form.addEventListener('input', preview);
@@ -168,6 +200,15 @@ export function initBooking() {
     try {
       const res = await fetch('/api/bookings/', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...v, channel }) });
       const data = await res.json().catch(() => ({}));
+      if (res.status === 409) {
+        err.textContent = data.error === 'capacity'
+          ? (es ? 'Esa habitación no admite tantos huéspedes. Elige otra.' : 'That room can’t take that many guests. Please choose another.')
+          : (es ? 'Esa habitación acaba de agotarse para tus fechas. Elige otra o cambia las fechas.' : 'That room just sold out for your dates. Choose another or change dates.');
+        win?.close();
+        sending = false;
+        await loadAvailability();
+        return go(1);
+      }
       if (!res.ok) throw new Error(data.error || 'generic');
       ref = data.ref;
     } catch (ex) {
@@ -223,6 +264,7 @@ export function initBooking() {
     const r = Number.parseInt(q.get('room'), 10);
     renderRooms(Number.isInteger(r) && qh.rooms[r] ? r : -1);
     go(1);
+    loadAvailability();
   } else {
     go(0);
   }

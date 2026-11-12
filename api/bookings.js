@@ -1,5 +1,6 @@
 // Public endpoint: a guest requests a booking (website or WhatsApp flow).
-import { validateBooking, createBooking, json } from './_lib/bookings.js';
+import { validateBooking, createBooking, listBookings, notifyStaff, json } from './_lib/bookings.js';
+import { getSettings, quote } from './_lib/inventory.js';
 
 export async function POST(request) {
   if (!(request.headers.get('content-type') || '').includes('application/json')) return json({ error: 'type' }, 415);
@@ -12,8 +13,16 @@ export async function POST(request) {
   const { booking, error } = validateBooking(body);
   if (error) return json({ error }, 422);
   try {
+    const [settings, bookings] = await Promise.all([getSettings(), listBookings()]);
+    if (booking.room !== null) {
+      const q = quote(settings, bookings, { hotel: booking.hotel, checkIn: booking.checkIn, checkOut: booking.checkOut, guests: booking.adults + booking.children })[booking.room];
+      if (!q?.fits) return json({ error: 'capacity' }, 409);
+      if (!q.left) return json({ error: 'sold_out' }, 409);
+      booking.quote = { rate: q.rate, total: q.total, currency: settings.currency, sample: settings.sample };
+    }
     const saved = await createBooking(booking);
-    return json({ ok: true, ref: saved.ref }, 201);
+    await notifyStaff(saved);
+    return json({ ok: true, ref: saved.ref, quote: saved.quote || null }, 201);
   } catch (err) {
     console.error('booking save failed', err?.message ?? err);
     return json({ error: 'storage' }, 503);

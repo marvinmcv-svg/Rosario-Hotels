@@ -848,3 +848,9 @@ details[open] > summary::after { transform: rotate(45deg); }
 }
 
 .page--book .wafab { display: none; }
+
+.bk__price { display: flex; flex-wrap: wrap; gap: .1rem .6rem; align-items: baseline; font-style: normal; margin-top: .2rem; font-size: .88rem; color: var(--fg); font-variant-numeric: tabular-nums; }
+.bk__price small { color: var(--muted); }
+.bk__price .bk__left { color: #f0a67a; }
+.bk__room.is-off { opacity: .45; cursor: not-allowed; }
+.bk__rooms.is-loading { opacity: .55; pointer-events: none; transition: opacity .2s; }

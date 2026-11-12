@@ -124,3 +124,36 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--l
   .arr { grid-template-columns: 1fr; gap: .3rem; }
   .adm-grid { grid-template-columns: 1fr; }
 }
+
+.adm-user { align-self: center; font-size: .82rem; color: rgba(242, 238, 230, .7); padding: 0 .4rem; }
+.adm-banner { margin: 0; padding: .75rem 1rem; border-radius: 10px; background: #fbe7cf; color: #6b3a08; font-size: .9rem; }
+.adm-legend { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--muted); margin-left: auto; }
+.adm-legend i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+.adm-legend .l0, .cal.c0 { background: #eef3ea; } .adm-legend .l1, .cal.c1 { background: #fbe7cf; } .adm-legend .l2, .cal.c2 { background: #f3c9bd; }
+.adm-cal td, .adm-cal th { padding: .45rem .35rem; text-align: center; font-size: .78rem; }
+.adm-cal td:first-child, .adm-cal th:first-child { text-align: left; min-width: 220px; position: sticky; left: 0; background: var(--paper); font-size: .85rem; }
+.adm-cal th.is-today { color: var(--ochre); }
+.cal { font-variant-numeric: tabular-nums; border-left: 1px solid #fff; }
+.cal[data-ref] { cursor: pointer; font-weight: 600; }
+.adm-cal tbody tr { cursor: default; }
+.adm-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1rem; align-items: start; }
+.adm-card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 1.2rem 1.3rem; display: grid; gap: 1rem; }
+.adm-card:first-child { grid-column: 1 / -1; }
+.adm-card header h2 { font: 400 1.5rem var(--serif); margin: 0; }
+.adm-card header p { margin: .3rem 0 0; color: var(--muted); font-size: .88rem; }
+.adm-card header p.warn { color: #8a4a0c; } .adm-card header p.ok { color: #2d5a2a; }
+.adm-card footer { display: flex; justify-content: flex-end; gap: .5rem; }
+.adm-h3 { font: 400 1.15rem var(--serif); margin: .4rem 0 0; }
+.adm-rates input { width: 90px; padding: .35rem .5rem; }
+.adm-rates tbody tr, .adm-card .adm-table tbody tr { cursor: default; }
+.adm-rates tbody tr:hover, .adm-card .adm-table tbody tr:hover { background: none; }
+.adm-field { display: grid; gap: .3rem; }
+.adm-field span { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.adm-check { display: flex !important; gap: .6rem; align-items: center; font-size: .9rem; }
+.adm-check input { width: auto; }
+.adm-inline { display: flex; flex-wrap: wrap; gap: .5rem; }
+.adm-inline input, .adm-inline select { flex: 1 1 140px; width: auto; }
+.adm-row-actions { display: flex; gap: .4rem; justify-content: flex-end; }
+.adm-row-actions .abtn--danger { margin-left: 0; }
+.dr-list select { padding: .35rem .5rem; }
+@media (max-width: 860px) { .adm-settings { grid-template-columns: 1fr; } .adm-legend { margin-left: 0; } }
